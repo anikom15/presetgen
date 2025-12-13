@@ -182,7 +182,13 @@ def main():
     # --- Write parameters from parameter set JSON files ---
     for param_obj in param_objs:
         params = param_obj.data.get('parameters', {})
+        rootpath = param_obj.data.get('rootpath') or param_obj.data.get('root_path', '')
         for k, v in params.items():
+            # Only prepend rootpath for string values that look like file paths
+            if isinstance(v, str) and rootpath:
+                # Don't prepend if v is already an absolute path or contains a protocol
+                if not (os.path.isabs(v) or v.startswith('..') or v.startswith('./') or ':' in v):
+                    v = os.path.normpath(os.path.join(rootpath, v))
             lines.append(f"{k} = {v}")
     lines.append("")
 
