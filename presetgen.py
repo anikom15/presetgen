@@ -152,16 +152,23 @@ def main():
                 lines.append(f"scale_type_y{idx} = {scale_type_val[1]}")
 
             # scale: handle array
+            scale_written = False
             if 'scale' in opts:
                 opt_val = opts['scale']
                 if isinstance(opt_val, list):
                     if len(opt_val) == 1:
                         lines.append(f"scale{idx} = {opt_val[0]}")
+                        scale_written = True
                     elif len(opt_val) == 2:
                         lines.append(f"scale_x{idx} = {opt_val[0]}")
                         lines.append(f"scale_y{idx} = {opt_val[1]}")
+                        scale_written = True
                 else:
                     lines.append(f"scale{idx} = {opt_val}")
+                    scale_written = True
+            # If no scale specified, add default
+            if not scale_written:
+                lines.append(f"scale{idx} = 1.0")
 
             # Other options
             for opt_key, opt_val in opts.items():
