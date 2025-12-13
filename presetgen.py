@@ -24,10 +24,11 @@ def wrap_comment(text, width=72):
     return ['# ' + line for line in textwrap.wrap(text, width)]
 
 
+
 def main():
     parser = argparse.ArgumentParser(description="Generate preset output file.")
-    parser.add_argument('input', help='Input preset JSON file')
-    parser.add_argument('-o', '--output-dir', default=None, help='Output directory (default: out in script dir)')
+    parser.add_argument('-i', '--input', required=True, help='Input preset JSON file')
+    parser.add_argument('-o', '--output', required=True, help='Output directory for generated preset')
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
     args = parser.parse_args()
 
@@ -42,7 +43,7 @@ def main():
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
     preset_json_dir = os.path.dirname(os.path.abspath(args.input))
-    output_dir = os.path.normpath(args.output_dir) if args.output_dir else os.path.join(script_dir, 'out')
+    output_dir = os.path.normpath(args.output)
     output_subdir = os.path.normpath(preset_data['type'])
     base_filename = os.path.splitext(os.path.normpath(preset_data['filename']))[0]
     output_filename = base_filename + '.slangp'
