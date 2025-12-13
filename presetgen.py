@@ -29,6 +29,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate preset output file.")
     parser.add_argument('-i', '--input', required=True, help='Input preset JSON file')
     parser.add_argument('-o', '--output', required=True, help='Output directory for generated preset')
+    parser.add_argument('--shader-ext', default='.slang', help='Shader file extension to use (default: .slang)')
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
     args = parser.parse_args()
 
@@ -121,14 +122,18 @@ def main():
 
 
     # --- Write shaders and options ---
+    shader_ext = args.shader_ext if args.shader_ext.startswith('.') else '.' + args.shader_ext
     for pidx, pipeline in enumerate(pipeline_objs):
         root_path = pipeline.data.get('root_path', '')
         shaders = pipeline.data.get('shaders', {})
         options = pipeline.data.get('options', {})
         for stage_key, shader_file in shaders.items():
             idx = shader_stage_map[(pidx, stage_key)]
-            # Shader line
-            lines.append(f"shader{idx} = {os.path.normpath(os.path.join(root_path, shader_file))}")
+            # Ensure shader_file ends with the extension
+            shader_path = os.path.normpath(os.path.join(root_path, shader_file))
+            if not shader_path.endswith(shader_ext):
+                shader_path += shader_ext
+            lines.append(f"shader{idx} = {shader_path}")
             # Options for this shader stage
             opts = options.get(stage_key, {})
 
