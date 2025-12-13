@@ -41,6 +41,7 @@ def main():
     vprint("Preset loaded:", json.dumps(preset_data, indent=2))
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    preset_json_dir = os.path.dirname(os.path.abspath(args.input))
     output_dir = os.path.normpath(args.output_dir) if args.output_dir else os.path.join(script_dir, 'out')
     output_subdir = os.path.normpath(preset_data['type'])
     base_filename = os.path.splitext(os.path.normpath(preset_data['filename']))[0]
@@ -59,15 +60,15 @@ def main():
 
 
     # --- State options: Load pipelines and parameter sets ---
-    pipeline_root = os.path.normpath(preset_data.get('pipeline_root', 'pipelines'))
-    parameter_root = os.path.normpath(preset_data.get('parameter_root', 'params'))
+    pipeline_root = os.path.normpath(os.path.join(preset_json_dir, preset_data.get('pipeline_root', 'pipelines')))
+    parameter_root = os.path.normpath(os.path.join(preset_json_dir, preset_data.get('parameter_root', 'params')))
     vprint(f"Pipeline root: {pipeline_root}")
     vprint(f"Parameter root: {parameter_root}")
 
     # Load all pipelines
     pipeline_objs = []
     for pipeline_file in preset_data.get('pipelines', []):
-        pipeline_path = os.path.normpath(os.path.join(script_dir, pipeline_root, pipeline_file))
+        pipeline_path = os.path.normpath(os.path.join(pipeline_root, pipeline_file))
         vprint(f"Loading Pipeline: {pipeline_path}")
         pipeline_obj = Pipeline(pipeline_path)
         vprint("Pipeline loaded:", json.dumps(pipeline_obj.data, indent=2))
@@ -79,15 +80,12 @@ def main():
     lines.append('')
 
     # --- State options: Load pipelines and parameter sets ---
-    pipeline_root = os.path.normpath(preset_data.get('pipeline_root', 'pipelines'))
-    parameter_root = os.path.normpath(preset_data.get('parameter_root', 'params'))
-    vprint(f"Pipeline root: {pipeline_root}")
-    vprint(f"Parameter root: {parameter_root}")
+    # pipeline_root and parameter_root already set above
 
     # Load all pipelines
     pipeline_objs = []
     for pipeline_file in preset_data.get('pipelines', []):
-        pipeline_path = os.path.normpath(os.path.join(script_dir, pipeline_root, pipeline_file))
+        pipeline_path = os.path.normpath(os.path.join(pipeline_root, pipeline_file))
         vprint(f"Loading Pipeline: {pipeline_path}")
         pipeline_obj = Pipeline(pipeline_path)
         vprint("Pipeline loaded:", json.dumps(pipeline_obj.data, indent=2))
@@ -96,7 +94,7 @@ def main():
     # Load all parameter sets
     param_objs = []
     for param_file in preset_data.get('parameter_sets', []):
-        param_path = os.path.normpath(os.path.join(script_dir, parameter_root, param_file))
+        param_path = os.path.normpath(os.path.join(parameter_root, param_file))
         vprint(f"Loading Params: {param_path}")
         param_obj = Params(param_path)
         vprint("Params loaded:", json.dumps(param_obj.data, indent=2))
