@@ -177,6 +177,19 @@ def main():
                 lines.append(f"{opt_key}{idx} = {opt_val}")
             lines.append("")  # Separate each shader index group with a blank line
 
+        # --- Write textures line ---
+        textures = pipeline.data.get('textures', [])
+        if textures:
+            textures_str = ';'.join(textures)
+            lines.append(f'textures = "{textures_str}"')
+
+        # --- Write texture_options lines ---
+        texture_options = pipeline.data.get('texture_options', {})
+        for tex_name, tex_opts in texture_options.items():
+            for sub_key, sub_val in tex_opts.items():
+                lines.append(f"{tex_name}_{sub_key} = {str(sub_val).lower() if isinstance(sub_val, bool) else sub_val}")
+        if textures or texture_options:
+            lines.append("")
 
     # --- Write pipeline parameters (from each pipeline's parameters object) ---
     for pipeline in pipeline_objs:

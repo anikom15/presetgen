@@ -9,12 +9,19 @@
       "minProperties": 1,
       "additionalProperties": { "type": "string" }
     },
+    "textures": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
     "options": {
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "properties": {
           "filter_linear": { "type": "boolean" },
+          "mipmap_input": { "type": "boolean" },
+          "wrap_mode" : { "type": "string", "enum": ["clamp_to_edge", "clamp_to_border", "repeat", "mirrored_repeat"] },
           "scale_type": {
             "type": "array",
             "items": { "type": "string", "enum": ["absolute", "source", "viewport"] },
@@ -27,6 +34,18 @@
             "minItems": 1,
             "maxItems": 2
           }
+        },
+        "additionalProperties": true
+      }
+    },
+    "texture_options": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "linear": { "type": "boolean" },
+          "mipmap": { "type": "boolean" },
+          "wrap_mode" : { "type": "string", "enum": ["clamp_to_edge", "clamp_to_border", "repeat", "mirrored_repeat"] }
         },
         "additionalProperties": true
       }
