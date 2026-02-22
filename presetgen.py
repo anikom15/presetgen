@@ -141,6 +141,14 @@ def main():
             filter_linear_val = opts.get('filter_linear', False)
             lines.append(f"filter_linear{idx} = {str(filter_linear_val).lower()}")
 
+            # mipmap_input: optional
+            if 'mipmap_input' in opts:
+                lines.append(f"mipmap_input{idx} = {str(opts['mipmap_input']).lower() if isinstance(opts['mipmap_input'], bool) else opts['mipmap_input']}")
+
+            # wrap_mode: optional
+            if 'wrap_mode' in opts:
+                lines.append(f"wrap_mode{idx} = {opts['wrap_mode']}")
+
             # scale_type: default 'source', handle array
             scale_type_val = opts.get('scale_type', ['source'])
             if not isinstance(scale_type_val, list):
@@ -172,7 +180,7 @@ def main():
 
             # Other options
             for opt_key, opt_val in opts.items():
-                if opt_key in ('filter_linear', 'scale_type', 'scale'):
+                if opt_key in ('filter_linear', 'scale_type', 'scale', 'mipmap_input', 'wrap_mode'):
                     continue
                 lines.append(f"{opt_key}{idx} = {opt_val}")
             lines.append("")  # Separate each shader index group with a blank line
@@ -187,7 +195,13 @@ def main():
         texture_options = pipeline.data.get('texture_options', {})
         for tex_name, tex_opts in texture_options.items():
             for sub_key, sub_val in tex_opts.items():
-                lines.append(f"{tex_name}_{sub_key} = {str(sub_val).lower() if isinstance(sub_val, bool) else sub_val}")
+                # Write linear, mipmap, mipmap_input, wrap_mode, and any other subproperty
+                if sub_key in ('linear', 'mipmap', 'mipmap_input'):
+                    lines.append(f"{tex_name}_{sub_key} = {str(sub_val).lower() if isinstance(sub_val, bool) else sub_val}")
+                elif sub_key == 'wrap_mode':
+                    lines.append(f"{tex_name}_wrap_mode = {sub_val}")
+                else:
+                    lines.append(f"{tex_name}_{sub_key} = {sub_val}")
         if textures or texture_options:
             lines.append("")
 
