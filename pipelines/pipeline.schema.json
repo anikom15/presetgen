@@ -43,6 +43,8 @@
       "additionalProperties": {
         "type": "object",
         "properties": {
+          "source_root_path": { "type": "string" },
+          "source": { "type": "string" },
           "linear": { "type": "boolean" },
           "mipmap": { "type": "boolean" },
           "wrap_mode" : { "type": "string", "enum": ["clamp_to_edge", "clamp_to_border", "repeat", "mirrored_repeat"] }

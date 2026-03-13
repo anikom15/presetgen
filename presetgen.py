@@ -187,15 +187,28 @@ def main():
 
         # --- Write textures line ---
         textures = pipeline.data.get('textures', [])
+        texture_options = pipeline.data.get('texture_options', {})
+        for tex_name in texture_options:
+            if tex_name not in textures:
+                print(
+                    f"Warning: texture '{tex_name}' exists in texture_options but is missing from textures array.",
+                    file=sys.stderr,
+                )
         if textures:
             textures_str = ';'.join(textures)
             lines.append(f'textures = "{textures_str}"')
 
         # --- Write texture_options lines ---
-        texture_options = pipeline.data.get('texture_options', {})
         for tex_name, tex_opts in texture_options.items():
+            source_root_path = tex_opts.get('source_root_path')
+            source = tex_opts.get('source')
+            if source is not None:
+                texture_source = os.path.normpath(os.path.join(source_root_path, source)) if source_root_path else source
+                lines.append(f"{tex_name} = {texture_source}")
             for sub_key, sub_val in tex_opts.items():
                 # Write linear, mipmap, mipmap_input, wrap_mode, and any other subproperty
+                if sub_key in ('source_root_path', 'source'):
+                    continue
                 if sub_key in ('linear', 'mipmap', 'mipmap_input'):
                     lines.append(f"{tex_name}_{sub_key} = {str(sub_val).lower() if isinstance(sub_val, bool) else sub_val}")
                 elif sub_key == 'wrap_mode':
