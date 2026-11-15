@@ -1,5 +1,5 @@
 {
-  "root_path": "example_shaders",
+  "root_path": "shaders",
   "pipeline_root": "pipelines",
   "parameter_root": "params"
 }

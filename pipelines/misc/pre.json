@@ -1,6 +1,5 @@
 {
     "shaders" : {
-        "menu" : "menus/menu-sdr",
         "frame" : "frame"
     },
     "options" : {
