@@ -1,4 +1,0 @@
-#ifndef PRESETGEN_LIMITER_INC
-#define PRESETGEN_LIMITER_INC
-#endif
-

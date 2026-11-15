@@ -1,4 +1,0 @@
-#ifndef PRESETGEN_USER_COMMON_INC
-#define PRESETGEN_USER_COMMON_INC
-#endif
-

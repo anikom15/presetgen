@@ -25,7 +25,6 @@ import time
 from data import Preset, Pipeline, Params
 
 
-CONFIG_FILENAME = 'presetgen.json'
 MENU_BASE_SHADER = 'menu-base.slang'
 MENU_MANIFEST_FILENAME = 'menu-manifest.json'
 INCLUDE_PATTERN = re.compile(r'^\s*#include\s+"([^"]+)"')
@@ -39,10 +38,10 @@ def wrap_comment(text, width=72):
     return ['# ' + line for line in textwrap.wrap(text, width)]
 
 
-def load_global_config(script_dir):
-    config_path = os.path.join(script_dir, CONFIG_FILENAME)
+def load_global_config(config_path):
+    config_path = os.path.normpath(config_path)
     if not os.path.exists(config_path):
-        raise ValueError(f"Missing required global config: {config_path}")
+        raise ValueError(f"Missing required config file: {config_path}")
     with open(config_path, 'r', encoding='utf-8') as f:
         config = json.load(f)
     required = ('root_path', 'pipeline_root', 'parameter_root')
@@ -303,6 +302,12 @@ def main():
     parser.add_argument('-i', '--input', required=True, help='Input preset JSON file')
     parser.add_argument('-o', '--output', required=True, help='Output directory for generated preset')
     parser.add_argument('--shader-ext', default='.slang', help='Shader file extension to use (default: .slang)')
+    parser.add_argument(
+        '-c',
+        '--config',
+        required=True,
+        help='Path to presetgen config JSON (must define root_path, pipeline_root, parameter_root)',
+    )
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose output')
     args = parser.parse_args()
 
@@ -315,8 +320,7 @@ def main():
     preset_data = preset.data
     vprint("Preset loaded:", json.dumps(preset_data, indent=2))
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_global_config(script_dir)
+    config = load_global_config(args.config)
     output_dir = os.path.normpath(args.output)
     presets_root = os.path.normpath(os.path.join(output_dir, 'presets'))
     packaged_shader_root = os.path.normpath(os.path.join(output_dir, 'shaders'))
@@ -352,7 +356,7 @@ def main():
         if 'root_path' in pipeline_obj.data:
             raise ValueError(
                 f"Pipeline '{pipeline_path}' contains deprecated 'root_path'. "
-                "Move it to presetgen.json."
+                "Move it to your config file's root_path."
             )
         vprint("Pipeline loaded:", json.dumps(pipeline_obj.data, indent=2))
         pipeline_objs.append(pipeline_obj)
