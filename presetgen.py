@@ -138,12 +138,17 @@ def generate_menu_shaders(pipeline_objs, shader_root_abs, parameter_root_abs, sh
 def copy_shader_tree(source_shader_root, output_shader_root, vprint):
     if not os.path.isdir(source_shader_root):
         raise ValueError(f"Shader root directory does not exist: {source_shader_root}")
+    source_real = os.path.normcase(os.path.realpath(source_shader_root))
+    output_real = os.path.normcase(os.path.realpath(output_shader_root))
+    if output_real == source_real or output_real.startswith(source_real + os.sep):
+        raise ValueError(
+            f"Packaged shader output '{output_shader_root}' must not be inside shader root '{source_shader_root}'"
+        )
     if os.path.exists(output_shader_root):
         vprint(f"Removing existing packaged shaders: {output_shader_root}")
         shutil.rmtree(output_shader_root)
     vprint(f"Copying shaders to package output: {output_shader_root}")
     shutil.copytree(source_shader_root, output_shader_root)
-
 
 def main():
     parser = argparse.ArgumentParser(description="Generate preset output file.")
