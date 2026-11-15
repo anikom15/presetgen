@@ -257,10 +257,9 @@ def main():
         options = pipeline.data.get('options', {})
         for stage_key, shader_file in shaders.items():
             idx = shader_stage_map[(pidx, stage_key)]
-            # Ensure shader_file ends with the extension
-            shader_path = os.path.normpath(os.path.join(root_path, shader_file))
-            if not shader_path.endswith(shader_ext):
-                shader_path += shader_ext
+            # Ensure shader_file ends with the extension while preserving forward-slash portability.
+            shader_path = os.path.normpath(os.path.join(root_path, shader_file)).replace('\\', '/')
+            shader_path = ensure_shader_file_extension(shader_path, shader_ext)
             lines.append(f"shader{idx} = {shader_path}")
             # Options for this shader stage
             opts = options.get(stage_key, {})
