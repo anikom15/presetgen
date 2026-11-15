@@ -119,6 +119,10 @@ def normalize_shader_ref(shader_ref):
     return os.path.normpath(shader_ref).replace('\\', '/')
 
 
+def is_menu_shader_reference(shader_ref):
+    return normalize_shader_ref(shader_ref).lower().startswith('menus/')
+
+
 def sanitize_menu_owner_token(owner_name):
     token = MENU_NAME_TOKEN_PATTERN.sub('-', owner_name.strip().lower()).strip('-')
     return token or 'preset'
@@ -208,13 +212,10 @@ def write_generated_menu_shader(menu_shader_output_path, include_files):
 
 def generate_menu_shaders(pipeline_objs, shader_root_abs, parameter_root_abs, shader_ext, preset_owner_name, vprint):
     shader_sources = []
-    menu_targets = set()
     for pipeline in pipeline_objs:
         shaders = pipeline.data.get('shaders', {})
         for shader_file in shaders.values():
-            normalized_shader = normalize_shader_ref(shader_file).lower()
-            if normalized_shader.startswith('menus/'):
-                menu_targets.add(normalized_shader)
+            if is_menu_shader_reference(shader_file):
                 continue
             source_shader = os.path.normpath(os.path.join(shader_root_abs, shader_file))
             source_shader = ensure_shader_file_extension(source_shader, shader_ext)
@@ -226,8 +227,6 @@ def generate_menu_shaders(pipeline_objs, shader_root_abs, parameter_root_abs, sh
                 continue
             shader_sources.append(source_shader)
 
-    if not menu_targets:
-        return {}
     if not os.path.isdir(parameter_root_abs):
         raise ValueError(f"Menu parameter root does not exist: {parameter_root_abs}")
 
@@ -255,15 +254,11 @@ def generate_menu_shaders(pipeline_objs, shader_root_abs, parameter_root_abs, sh
         else:
             vprint(f"Reused menu shader: {output_shader}")
 
-    menu_rewrites = {}
-    resolved_shader_no_ext = normalize_shader_ref(os.path.splitext(resolved_shader)[0])
     resolved_shader_with_ext = normalize_shader_ref(resolved_shader)
-    for menu_target in sorted(menu_targets):
-        menu_rewrites[menu_target] = {
-            'with_ext': resolved_shader_with_ext,
-            'without_ext': resolved_shader_no_ext,
-        }
-    return menu_rewrites
+    return {
+        'with_ext': resolved_shader_with_ext,
+        'without_ext': normalize_shader_ref(os.path.splitext(resolved_shader_with_ext)[0]),
+    }
 
 
 def copy_shader_tree(source_shader_root, output_shader_root, vprint):
@@ -361,7 +356,11 @@ def main():
         vprint("Pipeline loaded:", json.dumps(pipeline_obj.data, indent=2))
         pipeline_objs.append(pipeline_obj)
 
-    shader_count = sum(len(p.data.get('shaders', {})) for p in pipeline_objs)
+    shader_count = 1
+    for pipeline in pipeline_objs:
+        for shader_file in pipeline.data.get('shaders', {}).values():
+            if not is_menu_shader_reference(shader_file):
+                shader_count += 1
     lines.append(f"shaders = {shader_count}")
     lines.append('')
 
@@ -380,7 +379,10 @@ def main():
     for pidx, pipeline in enumerate(pipeline_objs):
         shaders = pipeline.data.get('shaders', {})
         vprint(f"Pipeline {pidx} shaders: {json.dumps(shaders, indent=2)}")
-        for stage_key in shaders:
+        for stage_key, shader_file in shaders.items():
+            if is_menu_shader_reference(shader_file):
+                vprint(f"Skipping legacy menu shader stage {stage_key} in pipeline {pidx}: {shader_file}")
+                continue
             shader_stage_map[(pidx, stage_key)] = shader_stage_counter
             vprint(f"Assigning shader stage {stage_key} in pipeline {pidx} to {shader_stage_counter}")
             shader_stage_counter += 1
@@ -394,7 +396,7 @@ def main():
     # --- Write shaders and options ---
     shader_ext = args.shader_ext if args.shader_ext.startswith('.') else '.' + args.shader_ext
     copy_shader_tree(config['shader_root_abs'], packaged_shader_root, vprint)
-    menu_shader_rewrites = generate_menu_shaders(
+    generated_menu_shader = generate_menu_shaders(
         pipeline_objs=pipeline_objs,
         shader_root_abs=packaged_shader_root,
         parameter_root_abs=os.path.normpath(os.path.join(packaged_shader_root, 'menus', 'parameters')),
@@ -403,22 +405,23 @@ def main():
         vprint=vprint,
     )
 
+    lines.append(f"shader0 = {os.path.normpath(os.path.join(packaged_root_path, generated_menu_shader['with_ext'])).replace('\\', '/')}")
+    lines.append("filter_linear0 = false")
+    lines.append("scale_type0 = source")
+    lines.append("scale0 = 1.0")
+    lines.append("")
+
     for pidx, pipeline in enumerate(pipeline_objs):
         root_path = packaged_root_path
         shaders = pipeline.data.get('shaders', {})
         options = pipeline.data.get('options', {})
         for stage_key, shader_file in shaders.items():
-            idx = shader_stage_map[(pidx, stage_key)]
-            normalized_shader_file = normalize_shader_ref(shader_file)
-            shader_override = menu_shader_rewrites.get(normalized_shader_file)
-            shader_file_to_use = shader_file
-            if shader_override:
-                if normalize_shader_ref(shader_file).lower().endswith(shader_ext.lower()):
-                    shader_file_to_use = shader_override['with_ext']
-                else:
-                    shader_file_to_use = shader_override['without_ext']
+            if is_menu_shader_reference(shader_file):
+                vprint(f"Ignoring legacy menu shader stage '{stage_key}' from pipeline {pidx}: {shader_file}")
+                continue
+            idx = shader_stage_map[(pidx, stage_key)] + 1
             # Ensure shader_file ends with the extension while preserving forward-slash portability.
-            shader_path = os.path.normpath(os.path.join(root_path, shader_file_to_use)).replace('\\', '/')
+            shader_path = os.path.normpath(os.path.join(root_path, shader_file)).replace('\\', '/')
             shader_path = ensure_shader_file_extension(shader_path, shader_ext)
             lines.append(f"shader{idx} = {shader_path}")
             # Options for this shader stage

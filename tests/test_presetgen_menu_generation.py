@@ -1,5 +1,7 @@
 import json
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -27,7 +29,7 @@ class PresetGenMenuShaderTests(unittest.TestCase):
             )
 
             copy_shader_tree(source_root, output_root, lambda *args, **kwargs: None)
-            pipeline = SimpleNamespace(data={'shaders': {'core': 'core', 'menu': 'menus/menu-sdr'}})
+            pipeline = SimpleNamespace(data={'shaders': {'core': 'core'}})
 
             first = generate_menu_shaders(
                 pipeline_objs=[pipeline],
@@ -46,7 +48,7 @@ class PresetGenMenuShaderTests(unittest.TestCase):
                 vprint=lambda *args, **kwargs: None,
             )
 
-            self.assertEqual(first['menus/menu-sdr']['with_ext'], second['menus/menu-sdr']['with_ext'])
+            self.assertEqual(first['with_ext'], second['with_ext'])
             manifest_path = os.path.join(output_root, 'menus', 'menu-manifest.json')
             with open(manifest_path, 'r', encoding='utf-8') as f:
                 manifest = json.load(f)
@@ -69,8 +71,8 @@ class PresetGenMenuShaderTests(unittest.TestCase):
             )
 
             copy_shader_tree(source_root, output_root, lambda *args, **kwargs: None)
-            pipeline_a = SimpleNamespace(data={'shaders': {'core': 'core-a', 'menu': 'menus/menu-sdr'}})
-            pipeline_b = SimpleNamespace(data={'shaders': {'core': 'core-b', 'menu': 'menus/menu-sdr'}})
+            pipeline_a = SimpleNamespace(data={'shaders': {'core': 'core-a'}})
+            pipeline_b = SimpleNamespace(data={'shaders': {'core': 'core-b'}})
 
             map_a = generate_menu_shaders(
                 pipeline_objs=[pipeline_a],
@@ -89,7 +91,7 @@ class PresetGenMenuShaderTests(unittest.TestCase):
                 vprint=lambda *args, **kwargs: None,
             )
 
-            self.assertNotEqual(map_a['menus/menu-sdr']['with_ext'], map_b['menus/menu-sdr']['with_ext'])
+            self.assertNotEqual(map_a['with_ext'], map_b['with_ext'])
             manifest_path = os.path.join(output_root, 'menus', 'menu-manifest.json')
             with open(manifest_path, 'r', encoding='utf-8') as f:
                 manifest = json.load(f)
@@ -107,7 +109,7 @@ class PresetGenMenuShaderTests(unittest.TestCase):
             )
 
             copy_shader_tree(source_root, output_root, lambda *args, **kwargs: None)
-            pipeline = SimpleNamespace(data={'shaders': {'core': 'core', 'menu': 'menus/menu-sdr'}})
+            pipeline = SimpleNamespace(data={'shaders': {'core': 'core'}})
 
             def run_one(idx):
                 mapping = generate_menu_shaders(
@@ -118,7 +120,7 @@ class PresetGenMenuShaderTests(unittest.TestCase):
                     preset_owner_name=f'parallel-{idx}',
                     vprint=lambda *args, **kwargs: None,
                 )
-                return mapping['menus/menu-sdr']['with_ext']
+                return mapping['with_ext']
 
             with ThreadPoolExecutor(max_workers=8) as executor:
                 generated = list(executor.map(run_one, range(24)))
@@ -146,6 +148,30 @@ class PresetGenMenuShaderTests(unittest.TestCase):
 
             self.assertTrue(os.path.exists(os.path.join(output_root, 'common.slang')))
             self.assertTrue(os.path.exists(os.path.join(output_root, 'menus', 'menu-existing.slang')))
+
+    def test_main_automatically_prepends_menu_shader(self):
+        repo_root = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_dir = os.path.join(temp_dir, 'out')
+            cmd = [
+                sys.executable,
+                os.path.join(repo_root, 'presetgen.py'),
+                '-i',
+                os.path.join(repo_root, 'example_preset.json'),
+                '-o',
+                output_dir,
+                '-c',
+                os.path.join(repo_root, 'example_presetgen.json'),
+            ]
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+            preset_out = os.path.join(output_dir, 'presets', 'professional', 'sfc.slangp')
+            with open(preset_out, 'r', encoding='utf-8') as f:
+                lines = [line.strip() for line in f.readlines() if line.strip()]
+            self.assertIn('shader0 = ../../shaders/menus/', ''.join(lines))
+            shaders_line = next(line for line in lines if line.startswith('shaders = '))
+            shader_count = int(shaders_line.split('=', 1)[1].strip())
+            shader_lines = [line for line in lines if line.startswith('shader') and line[6:7].isdigit() and ' = ' in line]
+            self.assertEqual(len(shader_lines), shader_count)
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ PresetGen is a Python tool for generating RetroArch slang preset files from stru
 - Compose presets from modular pipeline and parameter set JSON files
 - Uses a user-supplied config JSON for `root_path`, `pipeline_root`, and `parameter_root`
 - Synchronizes base shaders to `out/shaders` in a parallel-safe way
+- Automatically prepends a generated menu shader to every preset (pipeline JSON does not need menu stages)
 - Generates menu shaders by content signature, deduplicates identical menu include sets, and records mappings in `out/shaders/menus/menu-manifest.json`
 - Writes generated preset files under `out/presets/<type>/`
 - Automatic shader index assignment and option handling

@@ -1,0 +1,3 @@
+#ifndef PRESETGEN_SYS_RGB_INC
+#define PRESETGEN_SYS_RGB_INC
+#endif
