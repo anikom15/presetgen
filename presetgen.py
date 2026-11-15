@@ -96,7 +96,8 @@ def write_generated_menu_shader(menu_shader_output_path, include_files):
     for include_path in include_files:
         rel_include = os.path.relpath(include_path, menu_dir).replace('\\', '/')
         lines.append(f'#include "{rel_include}"')
-    lines.append(f'#include "{MENU_BASE_SHADER}"')
+    base_ext = os.path.splitext(menu_shader_output_path)[1]
+    lines.append(f'#include "{os.path.splitext(MENU_BASE_SHADER)[0]}{base_ext}"')
     with open(menu_shader_output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
 
