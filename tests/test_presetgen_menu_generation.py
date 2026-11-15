@@ -149,6 +149,52 @@ class PresetGenMenuShaderTests(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(output_root, 'common.slang')))
             self.assertTrue(os.path.exists(os.path.join(output_root, 'menus', 'menu-existing.slang')))
 
+    def test_copy_shader_tree_recopies_when_content_changes_even_if_mtime_is_same(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_root = os.path.join(temp_dir, 'source')
+            output_root = os.path.join(temp_dir, 'output')
+            source_path = os.path.join(source_root, 'common.slang')
+            output_path = os.path.join(output_root, 'common.slang')
+            _write_text(source_path, 'original\n')
+            os.makedirs(output_root, exist_ok=True)
+            _write_text(output_path, 'original\n')
+            os.utime(output_path, ns=(123456789, 123456789))
+            os.utime(source_path, ns=(123456789, 123456789))
+
+            _write_text(source_path, 'updated\n')
+            copy_shader_tree(source_root, output_root, lambda *args, **kwargs: None)
+
+            with open(output_path, 'r', encoding='utf-8') as fh:
+                self.assertEqual(fh.read(), 'updated\n')
+
+    def test_generate_menu_shaders_uses_repo_menu_base_include_for_non_slang_extensions(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_root = os.path.join(temp_dir, 'source')
+            output_root = os.path.join(temp_dir, 'output')
+            _write_text(os.path.join(source_root, 'menus', 'menu-base.slang'), '#version 450\n')
+            _write_text(os.path.join(source_root, 'menus', 'parameters', 'alpha.inc'), '// alpha\n')
+            _write_text(
+                os.path.join(source_root, 'core.frag'),
+                '#include "menus/parameters/alpha.inc"\n',
+            )
+
+            copy_shader_tree(source_root, output_root, lambda *args, **kwargs: None)
+            pipeline = SimpleNamespace(data={'shaders': {'core': 'core.frag'}})
+            mapping = generate_menu_shaders(
+                pipeline_objs=[pipeline],
+                shader_root_abs=output_root,
+                parameter_root_abs=os.path.join(output_root, 'menus', 'parameters'),
+                shader_ext='.frag',
+                preset_owner_name='preset',
+                vprint=lambda *args, **kwargs: None,
+            )
+
+            generated_shader = os.path.join(output_root, mapping['with_ext'].replace('/', os.sep))
+            with open(generated_shader, 'r', encoding='utf-8') as fh:
+                contents = fh.read()
+            self.assertIn('#include "menus/menu-base.slang"', contents)
+            self.assertNotIn('#include "menus/menu-base.frag"', contents)
+
     def test_main_automatically_prepends_menu_shader(self):
         repo_root = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
         with tempfile.TemporaryDirectory() as temp_dir:

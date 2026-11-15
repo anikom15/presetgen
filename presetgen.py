@@ -134,7 +134,7 @@ def build_generated_menu_shader_content(menu_shader_output_path, include_files):
     for include_path in include_files:
         rel_include = os.path.relpath(include_path, menu_dir).replace('\\', '/')
         lines.append(f'#include "{rel_include}"')
-    lines.append(f'#include "{MENU_BASE_SHADER}"')
+    lines.append('#include "menus/menu-base.slang"')
     return '\n'.join(lines) + '\n'
 
 
@@ -144,7 +144,7 @@ def compute_menu_signature(include_files, shader_root_abs, shader_ext):
         rel_include = os.path.relpath(include_path, shader_root_abs).replace('\\', '/').lower()
         normalized_includes.append(rel_include)
     payload = {
-        'menu_base': f"{os.path.splitext(MENU_BASE_SHADER)[0]}{shader_ext.lower()}",
+        'menu_base': MENU_BASE_SHADER,
         'includes': normalized_includes,
     }
     payload_json = json.dumps(payload, sort_keys=True, separators=(',', ':'))
@@ -284,10 +284,12 @@ def copy_shader_tree(source_shader_root, output_shader_root, vprint):
                 if os.path.exists(dest_file):
                     source_stat = os.stat(source_file)
                     dest_stat = os.stat(dest_file)
-                    should_copy = (
-                        source_stat.st_size != dest_stat.st_size or
-                        source_stat.st_mtime_ns != dest_stat.st_mtime_ns
-                    )
+                    with open(source_file, 'rb') as src_handle, open(dest_file, 'rb') as dest_handle:
+                        should_copy = (
+                            source_stat.st_size != dest_stat.st_size or
+                            source_stat.st_mtime_ns != dest_stat.st_mtime_ns or
+                            src_handle.read() != dest_handle.read()
+                        )
                 if should_copy:
                     atomic_copy_file(source_file, dest_file)
 
