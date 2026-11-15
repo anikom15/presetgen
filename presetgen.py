@@ -96,7 +96,8 @@ def write_generated_menu_shader(menu_shader_output_path, include_files):
     for include_path in include_files:
         rel_include = os.path.relpath(include_path, menu_dir).replace('\\', '/')
         lines.append(f'#include "{rel_include}"')
-    lines.append(f'#include "{MENU_BASE_SHADER}"')
+    base_ext = os.path.splitext(menu_shader_output_path)[1]
+    lines.append(f'#include "{os.path.splitext(MENU_BASE_SHADER)[0]}{base_ext}"')
     with open(menu_shader_output_path, 'w', encoding='utf-8') as f:
         f.write('\n'.join(lines) + '\n')
 
@@ -138,12 +139,17 @@ def generate_menu_shaders(pipeline_objs, shader_root_abs, parameter_root_abs, sh
 def copy_shader_tree(source_shader_root, output_shader_root, vprint):
     if not os.path.isdir(source_shader_root):
         raise ValueError(f"Shader root directory does not exist: {source_shader_root}")
+    source_real = os.path.normcase(os.path.realpath(source_shader_root))
+    output_real = os.path.normcase(os.path.realpath(output_shader_root))
+    if output_real == source_real or output_real.startswith(source_real + os.sep):
+        raise ValueError(
+            f"Packaged shader output '{output_shader_root}' must not be inside shader root '{source_shader_root}'"
+        )
     if os.path.exists(output_shader_root):
         vprint(f"Removing existing packaged shaders: {output_shader_root}")
         shutil.rmtree(output_shader_root)
     vprint(f"Copying shaders to package output: {output_shader_root}")
     shutil.copytree(source_shader_root, output_shader_root)
-
 
 def main():
     parser = argparse.ArgumentParser(description="Generate preset output file.")
@@ -251,10 +257,9 @@ def main():
         options = pipeline.data.get('options', {})
         for stage_key, shader_file in shaders.items():
             idx = shader_stage_map[(pidx, stage_key)]
-            # Ensure shader_file ends with the extension
-            shader_path = os.path.normpath(os.path.join(root_path, shader_file))
-            if not shader_path.endswith(shader_ext):
-                shader_path += shader_ext
+            # Ensure shader_file ends with the extension while preserving forward-slash portability.
+            shader_path = os.path.normpath(os.path.join(root_path, shader_file)).replace('\\', '/')
+            shader_path = ensure_shader_file_extension(shader_path, shader_ext)
             lines.append(f"shader{idx} = {shader_path}")
             # Options for this shader stage
             opts = options.get(stage_key, {})

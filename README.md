@@ -19,7 +19,7 @@ python presetgen.py -i <preset.json> -o <output_dir> [-v] [--shader-ext .slang]
 ```
 
 - `-i, --input` : Input preset description file
-- `-o OUTPUT_DIR` : Output directory (default: `out` in the script directory)
+- `-o OUTPUT_DIR` : Output directory for generated files (required)
 - `-v` : Verbose output (shows details about file loading and processing)
 - `--shader-ext` : Shader file extension (default: `.slang`)
 
