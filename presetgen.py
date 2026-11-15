@@ -134,7 +134,7 @@ def build_generated_menu_shader_content(menu_shader_output_path, include_files):
     for include_path in include_files:
         rel_include = os.path.relpath(include_path, menu_dir).replace('\\', '/')
         lines.append(f'#include "{rel_include}"')
-    lines.append('#include "menus/menu-base.slang"')
+    lines.append('#include "menu-base.slang"')
     return '\n'.join(lines) + '\n'
 
 

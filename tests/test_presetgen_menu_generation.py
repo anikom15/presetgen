@@ -192,7 +192,8 @@ class PresetGenMenuShaderTests(unittest.TestCase):
             generated_shader = os.path.join(output_root, mapping['with_ext'].replace('/', os.sep))
             with open(generated_shader, 'r', encoding='utf-8') as fh:
                 contents = fh.read()
-            self.assertIn('#include "menus/menu-base.slang"', contents)
+            self.assertIn('#include "menu-base.slang"', contents)
+            self.assertNotIn('#include "menus/menu-base.slang"', contents)
             self.assertNotIn('#include "menus/menu-base.frag"', contents)
 
     def test_main_automatically_prepends_menu_shader(self):
