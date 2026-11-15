@@ -3,7 +3,6 @@
   "title": "Pipeline",
   "type": "object",
   "properties": {
-    "root_path": { "type": "string" },
     "shaders": {
       "type": "object",
       "minProperties": 1,
@@ -58,8 +57,10 @@
     }
   },
   "required": [
-    "root_path",
     "shaders"
+  ],
+  "allOf": [
+    { "not": { "required": ["root_path"] } }
   ],
   "additionalProperties": true
 }

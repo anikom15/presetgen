@@ -7,12 +7,10 @@
     "type": { "type": "string" },
     "title": { "type": "string" },
     "description": { "type": "string" },
-    "pipeline_root": { "type": "string" },
     "pipelines": {
       "type": "array",
       "items": { "type": "string" }
     },
-    "parameter_root": { "type": "string" },
     "parameter_sets": {
       "type": "array",
       "items": { "type": "string" }
@@ -27,8 +25,11 @@
     "type",
     "title",
     "description",
-    "pipeline_root",
     "pipelines"
+  ],
+  "allOf": [
+    { "not": { "required": ["pipeline_root"] } },
+    { "not": { "required": ["parameter_root"] } }
   ],
   "additionalProperties": true
 }

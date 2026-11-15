@@ -4,6 +4,9 @@ PresetGen is a Python tool for generating RetroArch slang preset files from stru
 
 ## Features
 - Compose presets from modular pipeline and parameter set JSON files
+- Uses a global `presetgen.json` for `root_path`, `pipeline_root`, and `parameter_root`
+- Copies base shaders to `out/shaders` and generates menu shaders there
+- Writes generated preset files under `out/presets/<type>/`
 - Automatic shader index assignment and option handling
 - Handles per-shader and global parameters
 - Outputs well-formatted `.slangp` files with comments and documentation
@@ -12,16 +15,26 @@ PresetGen is a Python tool for generating RetroArch slang preset files from stru
 ## Usage
 
 ```
-python presetgen.py [-o OUTPUT_DIR] [-v] <preset.json>
+python presetgen.py -i <preset.json> -o <output_dir> [-v] [--shader-ext .slang]
 ```
 
-- `-o OUTPUT_DIR` : Output directory (default: `out` in the script directory)
+- `-i, --input` : Input preset description file
+- `-o OUTPUT_DIR` : Output directory for generated files (required)
 - `-v` : Verbose output (shows details about file loading and processing)
-- `<preset.json>` : Input preset description file
+- `--shader-ext` : Shader file extension (default: `.slang`)
 
 Example:
 ```
-python presetgen.py -v example_preset.json
+python presetgen.py -i example_preset.json -o out -v
+```
+
+Global config example (`presetgen.json` at repository root):
+```json
+{
+  "root_path": "example_shaders",
+  "pipeline_root": "pipelines",
+  "parameter_root": "params"
+}
 ```
 
 ## Project Structure
@@ -30,6 +43,7 @@ python presetgen.py -v example_preset.json
 - `validate_preset.py` : Standalone validation tool
 - `pipelines/` : Pipeline JSON files and schema
 - `params/` : Parameter set JSON files and schema
+- `presetgen.json` : Global roots for shaders, pipelines, and parameter sets
 - `preset.schema.json` : Preset JSON schema
 - `requirements.txt` : Python dependencies
 
